@@ -98,10 +98,13 @@ echipp.is.verbose <- function() {
 #' @noRd
 echipp.get.location <- function(option.name, option.description, executable.name = NULL, attempt.create = FALSE) {
 	result <- getOption(option.name)
+	if (.Platform$OS.type == "windows" && (!is.null(executable.name))) {
+		executable.name <- paste0(executable.name, ".exe")
+	}
 	if (is.null(result)) {
 		if (!is.null(executable.name)) {
-			result <- suppressMessages(suppressWarnings(
-				system(paste('which', executable.name), intern = TRUE, show.output.on.console = FALSE)))
+			cmd <- paste(ifelse(.Platform$OS.type == "windows", "where", "which"), executable.name)
+			result <- suppressMessages(suppressWarnings(system(cmd, intern = TRUE, show.output.on.console = FALSE)))
 			if (length(result) == 0 || isTRUE(attr(result, "status") == 1)) {
 				result <- NULL
 			}
@@ -118,8 +121,14 @@ echipp.get.location <- function(option.name, option.description, executable.name
 		if ((!file.exists(result)) && (!dir.create(result, FALSE, TRUE))) {
 			stop(paste0("Could not create ", option.description, "; change option ", option.name))
 		}
-	} else if (!isTRUE((file.info(file.path(result, executable.name))[1, "mode"] & "111") != "0")) {
-		stop(paste0("Invalid ", option.description, "; update option ", option.name))
+	} else {
+		fname <- file.path(result, executable.name)
+		if (!file.exists(fname)) {
+			stop(paste0("Invalid ", option.description, "; update option ", option.name))
+		}
+		if (.Platform$OS.type != "windows" && (!isTRUE((file.info(fname)[1, "mode"] & "111") != "0"))) {
+			stop(paste0("Invalid ", option.description, "; update option ", option.name))
+		}
 	}
 	result
 }

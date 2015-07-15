@@ -183,7 +183,7 @@ echipp.update.annotation.columns <- function(tbl, genome.assembly, working.dir =
 		}
 		pth
 	}
-	for (cn in c(cname.reference, sub("1$", "2", cname.reference))) {
+	for (cn in intersect(c(cname.reference, sub("1$", "2", cname.reference)), colnames(tbl))) {
 		tbl[, cn] <- convert.to.absolute(tbl[, cn])
 	}
 	apply.regex <- function(cn, regex.target, cname = cname.reference) {
