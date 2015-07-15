@@ -1,0 +1,12 @@
+* text=lf
+
+*.R text
+*.Rnw text
+*.c text
+*.h text
+*.man text
+
+*.RData binary
+*.RDS binary
+*.jpg binary
+*.png binary
