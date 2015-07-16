@@ -52,16 +52,14 @@ echipp.load.table <- function(fname, ...) {
 	if (!(is.character(fname) && length(fname) == 1 && isTRUE(fname != ""))) {
 		stop("Invalid value for fname")
 	}
-	fun.params <- c(list(file = fname, sheetIndex = 1L), list(...))
+	fun.params <- c(list(file = fname), list(...))
 	if (grepl("\\.xls(x?)$", tolower(fname))) {
-		echipp.require("xlsx")
+		echipp.require("openxlsx")
 		fun.name <- "read.xlsx"
 	} else if (grepl("\\.csv$", tolower(fname))) {
 		fun.name <- "read.csv"
-		fun.params[[2]] <- NULL
 	} else if (grepl("\\.txt$", tolower(fname))) {
 		fun.name <- "read.txt"
-		fun.params[[2]] <- NULL
 	} else {
 		stop("Invalid value for fname; unknown file type")
 	}

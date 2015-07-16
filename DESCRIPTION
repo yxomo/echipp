@@ -9,7 +9,7 @@ Description: Collection of methods and functions for alignment, quality control
     and statistical analysis of ChIP-seq datasets
 License: GPL 3
 Suggests:
-	xlsx
+	openxlsx
 Depends:
     R (>= 3.0),
     ggplot2,
