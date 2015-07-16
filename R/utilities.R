@@ -56,6 +56,7 @@ echipp.load.table <- function(fname, ...) {
 	if (grepl("\\.xls(x?)$", tolower(fname))) {
 		echipp.require("openxlsx")
 		fun.name <- "read.xlsx"
+		names(fun.params)[1] <- "xlsxFile"
 	} else if (grepl("\\.csv$", tolower(fname))) {
 		fun.name <- "read.csv"
 	} else if (grepl("\\.txt$", tolower(fname))) {
