@@ -43,7 +43,7 @@ suppressPackageStartupMessages(load_all("echipp"))
 options(echipp.verbose = TRUE)
 #dataset <- echipp.initialize("D:/Datasets/ChIP-seq/2014-08-18-Finke/samples-Finke.csv", "mm10",
 #	"D:/Datasets/ChIP-seq/colors.csv", TRUE)
-dataset <- echipp.initialize("D:/Datasets/ChIP-seq/samples-ENCODE-Condorelly-cluster.xlsx", "mm10",
+dataset <- echipp.initialize("D:/Datasets/ChIP-seq/samples-ENCODE-Condorelli-cluster.xlsx", "mm10",
 	"D:/Datasets/ChIP-seq/colors.csv", TRUE)
 dir.report <- "C:/Users/assenov/DKFZ/Projects/60-Finke/reports/testme"
 dir.fastq.original <- NULL
@@ -84,7 +84,7 @@ dir.bam <- NULL
 #	names(zips.expected) <- sample.ids
 
 	## Initialize the report
-	report <- createReport(file.path(dir.report, "combined.html"), "FastQC Results", "FastQC Results", "Echipp",
+	report <- createReport(file.path(dir.report, "combined.html"), "FastQC Results", "FastQC Results", "echipp",
 		init.configuration = !file.exists(file.path(dir.report, "configuration")))
 	txt <- c('This report summarizes the results of running <a ',
 		'href="http://www.bioinformatics.babraham.ac.uk/projects/fastqc">FastQC</a> on some or all of the available ',

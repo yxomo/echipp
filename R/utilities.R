@@ -392,6 +392,27 @@ echipp.get.files <- function(dataset, sample.id, file.type = "fastq", named = FA
 
 ########################################################################################################################
 
+#' echipp.sample.names
+#' 
+#' Gets the sample names in a dataset.
+#' 
+#' @param dataset         Dataset of interest as an object of type \linkS4class{EchippSet}.
+#' @return Sample names as a \code{character} vector.
+#' 
+#' @author Yassen Assenov
+#' @export
+echipp.sample.names <- function(dataset) {
+	if (!inherits(dataset, "EchippSet")) {
+		stop("Invalid value for dataset")
+	}
+	if ("Name" %in% colnames(dataset@info)) {
+		return(dataset@info[, "Name"])
+	}
+	return(rownames(dataset@info))
+}
+
+########################################################################################################################
+
 #' echipp.run.alignment
 #'
 #' ...

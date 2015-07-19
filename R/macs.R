@@ -93,20 +93,21 @@ echipp.run.peak.calling <- function(dataset, job.name.prefix = 'Echipp_peak_call
 ########################################################################################################################
 
 echipp.plot.macs.model <- function(fname, y.step = 0.05) {
+#fname <- "D:/Datasets/ChIP-seq/E-MTAB-1506/macs/mm9/H3K9ac_sham.txt"
+#y.step <- 0.05
 	tbl <- tryCatch(read.csv(fname, header = FALSE, quote = ""), error = function(err) { NULL })
 	if (is.null(tbl)) {
 		stop(paste("Could not load table from", fname))
 	}
-#	tbl <- read.csv("D:/Datasets/ChIP-seq/E-MTAB-1506/macs/mm9/H3K9ac_sham.txt", header = FALSE, quote = "")
 	if (!identical(unname(sapply(tbl, class)), c("factor", "numeric"))) {
 		stop("Unexpected table structure")
 	}
 	N <- tapply(tbl[, 2], tbl[, 1], length)
 	if (!identical(names(N), c("m", "p", "s"))) {
-		## TODO: Unknown factors
+		stop("Unexpected table structure; unknown factors")
 	}
 	if (!all(N == N[1])) {
-		## TODO: Unequal number of observations
+		stop("Unexpected table structure; differing number of observations")
 	}
 	tbl[, 1] <- factor(as.character(tbl[, 1]), levels = c("p", "m", "s"))
 	levels(tbl[, 1]) <- c("forward", "reverse", "shifted")
@@ -118,7 +119,7 @@ echipp.plot.macs.model <- function(fname, y.step = 0.05) {
 	maxs <- tapply(1:nrow(tbl), tbl[, 1], function(i) { median(tbl[tbl[i, 2] == max(tbl[i, 2]), 3]) })
 	ymax <- ceiling(max(tbl[, 2]) / y.step) * y.step
 
-	pp <- ggplot(tbl) + aes(x = x, y = y, color = z) + geom_line(lwd = 1.5) +
+	pp <- ggplot(tbl) + aes_string(x = 'x', y = 'y', color = 'z') + geom_line(lwd = 1.5) +
 		labs(x = "Distance to middle (bp)", y = "Percentage", color = "Tags") +
 		scale_y_continuous(limits = c(0, ymax), labels = seq(0, ymax, by = y.step), expand = c(0, 0)) +
 		scale_colour_manual(values = colors.z)
@@ -131,4 +132,95 @@ echipp.plot.macs.model <- function(fname, y.step = 0.05) {
 #pdf("C:/Users/assenov/DKFZ/Meetings/2015-07-10-NGS/poster/images/macs_H3K9ac_sham.pdf", width = 7.2, height = 7.2)
 #print(pp)
 #dev.off()
+}
+
+########################################################################################################################
+
+#' echipp.report.peaks
+#' 
+#' Creates a report summarizing the outcome of peak calling algorithms.
+#' 
+#' @param dataset    Dataset of interest as an object of type \linkS4class{EchippSet}.
+#' @param dir.report Directory to contain the generated report. The report's HTML file is named \code{"peaks.html"}. If
+#'                   the given directory is non-existent, this function attempts to create it. Set this to \code{"."} to
+#'                   use the current working directory.
+#' @return The generated report, invisibly.
+#' 
+#' @author Yassen Assenov
+#' @export
+echipp.report.peaks <- function(dataset, dir.report) {
+#dir.report <- "D:/Datasets/ChIP-seq/ENCODE/echipp-reports"
+#suppressPackageStartupMessages(library(RnBeads))
+	if (!inherits(dataset, "EchippSet")) {
+		stop("invalid value for dataset")
+	}
+	if (!(is.character(dir.report) && length(dir.report) == 1 && isTRUE(dir.report != ""))) {
+		stop("invalid value for dir.report")
+	}
+	echipp.require("RnBeads")
+
+	if (file.exists(dir.report)) {
+		if (!file.info(dir.report)[1, "isdir"]) {
+			stop("invalid value for dir.report; existing file")
+		}
+	} else if (!rnb.initialize.reports(dir.report)) {
+		stop("could not initialize report directory")
+	}
+	ggplot2::theme_set(ggplot2::theme_bw())
+
+	## Initialize the report
+	report <- tryCatch(createReport(file.path(dir.report, "peaks.html"), "Peak Calling", "Peak Calling", "echipp",
+			init.configuration = !file.exists(file.path(dir.report, "configuration"))),
+		error = function(err) { NULL })
+	if (is.null(report)) {
+		stop("could not initialize report in dir.reports")
+	}
+	sample.names <- echipp.sample.names(dataset)
+	txt <- c('This report summarizes the results of running <a ',
+		'href="http://liulab.dfci.harvard.edu/MACS/">MACS</a> on some or all of the available ',
+		'<b>', length(sample.names), '</b> sample', ifelse(length(sample.names) == 1, '', 's'), ' from the study of ',
+		'interest. Information on how to interpret the plots shown here is available in the dedicated <a ',
+		'href="http://www.genomebiology.com/content/9/9/R137">publication</a> about the tool and its underlying ',
+		'algorithms.')
+	report <- rnb.add.section(report, "Introduction", txt)
+
+	files.model <- sapply(sample.names, function(sample.id) { echipp.get.files(dataset, sample.id, "macs") })
+	files.exs <- file.exists(files.model)
+	summary.models <- table(files.exs, useNA = "ifany")
+	summary.models <- data.frame(
+		"File status" = c("FALSE" = "missing", "TRUE" = "present", "NA" = "not specified")[names(summary.models)],
+		"Cases" = as.integer(summary.models), check.names = FALSE, stringsAsFactors = FALSE)
+	txt <- c("This section summarizes the MACS models that were constructed during peak finding. The table below gives",
+		"an overview of the available files, if any.")
+	report <- rnb.add.section(report, "MACS Models", txt)
+	rnb.add.table(report, summary.models, row.names = FALSE)
+	if (isTRUE(any(files.exs))) {
+		rplots <- list()
+		for (i in 1:length(files.model)) {
+			if (is.na(files.exs[i])) {
+				pp <- rnb.message.plot("Model file is not specified")
+			} else if (files.exs[i]) {
+				pp <- tryCatch(echipp.plot.macs.model(files.model[i]), error = function(er) {
+						txt <- ifelse(grepl("Unexpected table", er$message),
+							 "Invalid or unsupported model file", "Error while opening model file")
+						rnb.message.plot(txt)
+					}
+				)
+			} else {
+				pp <- rnb.message.plot("Model file is not generated")
+			}
+			rplot <- createReportPlot(sprintf("models_macs_%04i", i), report, width = 7.2, height = 7.2)
+			print(pp)
+			rplots <- c(rplots, off(rplot))
+		}
+		txt <- "The following figure visualizes the enrichments of forward and reverse reads."
+		rnb.add.paragraph(report, txt)
+		txt <- "MACS models of peaks formed by forward and reverse reads."
+		setting.names <- list("Sample" = sample.names)
+		names(setting.names[[1]]) <- sprintf("%04d", 1:length(setting.names[[1]]))
+		report <- rnb.add.figure(report, txt, rplots, setting.names)
+		rm(rplots, i, pp, rplot, txt, setting.names)
+	}
+
+	off(report)	
 }
