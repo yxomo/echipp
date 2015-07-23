@@ -9,12 +9,20 @@
 ## G L O B A L S #######################################################################################################
 
 ## Names of all recognized echipp options
-ECHIPP.OPTIONS <- c("echipp.aligner", "echipp.bowtie", "echipp.samtools", "echipp.macs",
-	"echipp.cluster", "echipp.verbose")
+ECHIPP.OPTIONS <- c("echipp.aligner", "echipp.bowtie", "echipp.bowtie2", "echipp.samtools", "echipp.macs",
+	"echipp.cluster", "echipp.logs", "echipp.verbose")
 
 ## F U N C T I O N S ###################################################################################################
 
-echipp.load.options <- function(fname = system.file("data/options.RData", package = "echipp")) {
+#' echipp.options.default
+#'
+#' Gets the default values of (some or all) \pkg{echipp} options.
+#'
+#' @return Named \code{list} containing the default values of options; an empty list if there are
+#'         no default option values stored in the current installation of \pkg{echipp}.
+#' @author Yassen Assenov
+#' @export
+echipp.options.default <- function(fname = system.file("data/options.RData", package = "echipp")) {
 	if (file.exists(fname)) {
 		load(fname)
 	} else {
@@ -34,7 +42,7 @@ echipp.load.options <- function(fname = system.file("data/options.RData", packag
 #' @author Yassen Assenov
 #' @export
 echipp.reload.options <- function() {
-	echipp.options <- echipp.load.options()
+	echipp.options <- echipp.options.default()
 	if (length(echipp.options) != 0) {
 		return(invisible(do.call(options, echipp.options)))
 	}
