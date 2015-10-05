@@ -73,6 +73,31 @@ echipp.load.table <- function(fname, ...) {
 
 ########################################################################################################################
 
+#' echipp.validate.dir
+#'
+#' Validates the specified directory name for a function parameter.
+#'
+#' @param dir.name   Given directory name.
+#' @param param.name Name of the function parameter.
+#' @param optional   Flag indicating if the given directory must be an existing one.
+#' @return None (invisible \code{NULL})
+#'
+#' @author Yassen Assenov
+#' @noRd
+echipp.validate.dir <- function(dir.name, param.name, optional = TRUE) {
+	if (!(optional && is.null(dir.name))) {
+		if (!(is.character(dir.name) && length(dir.name) == 1 && isTRUE(dir.name != ""))) {
+			stop(paste("Invalid value for", param.name))
+		}
+		if ((optional || file.exists(dir.name)) && (!isTRUE(file.info(dir.name)[, "isdir"]))) {
+			stop(paste0("Invalid value for ", param.name, "; expected ", ifelse(optional, " existing", ""),
+						"directory"))
+		}
+	}
+}
+
+########################################################################################################################
+
 #' echipp.create.dir
 #'
 #' Creates, if necesessary, the directories in which the given files should be saved.

@@ -34,49 +34,50 @@ SUMMARY.STATES <- c(
 
 ## F U N C T I O N S ###################################################################################################
 
-echipp.fastqc.summarize <- function(dataset, dir.report, dir.fastq.original = NULL, dir.fastq.processed = NULL,
+#' echipp.fastqc.summarize
+#' 
+#' Creates a report summarizing the results from running FastQC.
+#' 
+#' @param dataset             ...
+#' @param dir.report          ...
+#' @param dir.fastq.original  ...
+#' @param dir.fastq.processed ...
+#' @param dir.bam             ...
+#' @return Invisibly, the generated report.
+#' 
+#' @author Yassen Assenov
+#' @export
+echipp.report.fastqc <- function(dataset, dir.report, dir.fastq.original = NULL, dir.fastq.processed = NULL,
 	dir.bam = NULL) {
 
-setwd("C:/Users/assenov/DKFZ/Projects")
-suppressPackageStartupMessages(library(devtools))
-suppressPackageStartupMessages(load_all("echipp"))
-options(echipp.verbose = TRUE)
+#setwd("C:/Users/assenov/DKFZ/Projects")
+#suppressPackageStartupMessages(library(devtools))
+#suppressPackageStartupMessages(load_all("echipp"))
+#options(echipp.verbose = TRUE)
 #dataset <- echipp.initialize("D:/Datasets/ChIP-seq/2014-08-18-Finke/samples-Finke.csv", "mm10",
 #	"D:/Datasets/ChIP-seq/colors.csv", TRUE)
-dataset <- echipp.initialize("D:/Datasets/ChIP-seq/samples-ENCODE-Condorelli-cluster.xlsx", "mm10",
-	"D:/Datasets/ChIP-seq/colors.csv", TRUE)
-dir.report <- "C:/Users/assenov/DKFZ/Projects/60-Finke/reports/testme"
-dir.fastq.original <- NULL
-dir.fastq.processed <- "D:/Datasets/ChIP-seq/fastqc/fastq-processed"
-dir.bam <- NULL
+#dataset <- echipp.initialize("D:/Datasets/ChIP-seq/samples-ENCODE-Condorelli-Windows.csv", "mm10",
+#	"D:/Datasets/ChIP-seq/colors.csv", TRUE)
+#dir.report <- "C:/Users/assenov/DKFZ/Projects/60-Finke/reports/testme"
+#dir.fastq.original <- NULL
+#dir.fastq.processed <- "D:/Datasets/ChIP-seq/fastqc/fastq-processed"
+#dir.bam <- NULL
 
 	echipp.require('RnBeads')
 	logger.start(fname = NA)
 
 	## Validate parameters
-	validate.dir <- function(dir.name, param.name, optional = TRUE) {
-		if (!(optional && is.null(dir.name))) {
-			if (!(is.character(dir.name) && length(dir.name) == 1 && isTRUE(dir.name != ""))) {
-				stop(paste("Invalid value for", param.name))
-			}
-			if ((optional || file.exists(dir.name)) && (!isTRUE(file.info(dir.name)[, "isdir"]))) {
-				stop(paste0("Invalid value for ", param.name, "; expected ", ifelse(optional, " existing", ""),
-					"directory"))
-			}
-		}
-	}
 	if (!inherits(dataset, "EchippSet")) {
 		stop("Invalid value for dataset")
 	}
-	validate.dir(dir.report, "dir.report", FALSE)
-	validate.dir(dir.fastq.original, "dir.fastq.original")
-	validate.dir(dir.fastq.processed, "dir.fastq.processed")
-	validate.dir(dir.bam, "dir.bam")
+	echipp.validate.dir(dir.report, "dir.report", FALSE)
+	echipp.validate.dir(dir.fastq.original, "dir.fastq.original")
+	echipp.validate.dir(dir.fastq.processed, "dir.fastq.processed")
+	echipp.validate.dir(dir.bam, "dir.bam")
 	dirs.all <- c("original fastq" = dir.fastq.original, "processed fastq" = dir.fastq.processed, "BAM" = dir.bam)
 	if (length(dirs.all) == 0) {
 		stop("At least one of dir.fastq.original, dir.fastq.processed or dir.bam must be specified")
 	}
-	rm(validate.dir)
 
 	ggplot2::theme_set(ggplot2::theme_bw())
 	sample.ids <- rownames(dataset@info)
@@ -84,7 +85,7 @@ dir.bam <- NULL
 #	names(zips.expected) <- sample.ids
 
 	## Initialize the report
-	report <- createReport(file.path(dir.report, "combined.html"), "FastQC Results", "FastQC Results", "echipp",
+	report <- createReport(file.path(dir.report, "fastqc.html"), "FastQC Results", "FastQC Results", "echipp",
 		init.configuration = !file.exists(file.path(dir.report, "configuration")))
 	txt <- c('This report summarizes the results of running <a ',
 		'href="http://www.bioinformatics.babraham.ac.uk/projects/fastqc">FastQC</a> on some or all of the available ',
@@ -159,7 +160,7 @@ dir.bam <- NULL
 			ggplot2::scale_y_discrete(drop = FALSE, expand = c(0, 0)) +
 			ggplot2::scale_shape_discrete(drop = FALSE) + epi.plot.style()
 		rplot <- createReportPlot("errors", report, i.width, i.height)
-		pp <- suppressWarnings(ggplot_gtable(ggplot_build(pp)))
+		pp <- suppressWarnings(ggplot2::ggplot_gtable(ggplot2::ggplot_build(pp)))
 		pp$widths[[3]] <- unit(i.ylab, "in")
 		pp$heights[[length(pp$heights) - 2L]] <- unit(i.xlab, "in")
 		grid.draw(pp)
@@ -171,12 +172,15 @@ dir.bam <- NULL
 	rm(tbl.errors)
 	i.legend <- 1
 
-	## Display test results in a heatmap
+	## Display test results in heatmaps
 	report.plots <- list()
 	col.levels <- c("#00FF00", "#FFFF00", "#800000")
 	names(col.levels) <- t.levels
 	mtraits <- echipp.color.mappings(dataset)
-for (i in 1:length(tbl.results)) {
+	setting.names <- list("File types" = names(tbl.results), "Color based on" = c("none", names(mtraits)))
+	names(setting.names[[1]]) <- 1:length(tbl.results)
+	names(setting.names[[2]]) <- 0:length(mtraits)
+	for (i in 1:length(tbl.results)) {
 #i <- 1L
 		tresults <- tbl.results[[i]]
 		dframe <- data.frame(
@@ -186,7 +190,7 @@ for (i in 1:length(tbl.results)) {
 		i.width <- 0.2 + i.ylab + ncol(tresults) * 0.25 + i.legend
 		i.height <- 0.4 + i.xlab + (nrow(tresults) + 0.0) * 0.25
 		for (it in 0:length(mtraits)) {
-#it <- 1L
+#it <- 0L
 			pp <- ggplot2::ggplot(dframe, ggplot2::aes_string(x = 'x', y = 'y', fill = 'f')) +
 				ggplot2::geom_tile(col = "#FFFFFF") + scale_fill_manual(na.value = "#FFFFFF", values = col.levels) +
 				ggplot2::scale_x_discrete(drop = FALSE, expand = c(0, 0)) +
@@ -214,5 +218,13 @@ for (i in 1:length(tbl.results)) {
 			report.plots <- c(report.plots, off(rplot))
 		}
 	}
+	txt <- "We first show an overview of all files in the dataset tested with FastQC."
+	report <- rnb.add.section(report, "Summary", txt)
+	txt <- "Heatmap summarizing the findings of FastQC for all tested samples."
+	report <- rnb.add.figure(report, txt, report.plots, setting.names)
+	rm(i, report.plots, col.levels, mtraits, tresults, dframe, i.width, i.height, it, pp, fname, rplot, txt)
 
+	txt <- "TODO: Add individual FastQC plots."	
+	report <- rnb.add.section(report, "Individual Tests", txt)
+	off(report)
 }

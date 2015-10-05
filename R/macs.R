@@ -29,6 +29,7 @@ echipp.run.peak.calling <- function(dataset, job.name.prefix = 'Echipp_peak_call
 	}
 	dir.logs <- echipp.get.location("echipp.logs", "log directory", NULL, TRUE)
 	macs.location <- echipp.get.location("echipp.macs", "MACS location", "macs14")
+	genome.assembly <- sub("hg", "hs", substr(assembly(dataset), 1, 2), fixed = TRUE)
 
 	result <- integer()
 	for (sample.id in samples(dataset)) {
@@ -80,7 +81,7 @@ echipp.run.peak.calling <- function(dataset, job.name.prefix = 'Echipp_peak_call
 			fnames.output[is.na(fnames.output)] <- ""
 			sparams <- c('templocation' = echipp.create.temporary.dir(dir.logs), 'macslocation' = macs.location,
 				'treatmentfile' = fname.target, 'controlfile' = fname.control,
-				'id' = sample.id, 'assembly' = substr(assembly(dataset), 1, 2), 'fragmentlength' = flength,
+				'id' = sample.id, 'assembly' = genome.assembly, 'fragmentlength' = flength,
 				'pospeakfile' = fnames.output[1], 'negpeakfile' = fnames.output[2],
 				'trackfile' = fnames.output[3], 'macsmodelfile' = fnames.output[4])
 			result <- c(result, echipp.start.script("macs.sh", sparams, job.name, job.options))

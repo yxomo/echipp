@@ -12,5 +12,6 @@ Suggests:
 	openxlsx
 Depends:
     R (>= 3.0),
+    Rsamtools,
     ggplot2,
     grid
