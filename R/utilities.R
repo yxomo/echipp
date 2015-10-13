@@ -495,8 +495,8 @@ echipp.run.alignment <- function(dataset, job.name.prefix = 'Echipp_alignment_',
 			job.name <- paste0(job.name.prefix, sample.id)
 			if (length(fnames.fastq) == 1) {
 				bparams <- c('bowtielocation' = bowtie.location, 'samtools' = samtools.location,
-					'genome' = assembly(dataset), 'fastqfile' = fnames.fastq, 'bamfile' = fname.bam,
-					'samfile' = fname.sam, 'keepsam' = ifelse(keep.sam, 'yes', 'no'))
+					'genome' = assembly(dataset), 'fastqfile' = fnames.fastq, 'samfile' = fname.sam,
+					'bamprefix' = sub("\\.bam$", "", fname.bam), 'keepsam' = ifelse(keep.sam, 'yes', 'no'))
 				result <- c(result, echipp.start.script("bowtie.sh", bparams, job.name))
 			} else {
 				stop("Paired-end reads are not yet supported")

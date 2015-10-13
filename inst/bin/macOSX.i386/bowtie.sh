@@ -13,7 +13,9 @@ else
 	cat "${fastqfile}" | ./bowtie --sam ${genome} - "${samfile}"
 fi
 
-"${samtools}/samtools" view -bS -o "${bamfile}" "${samfile}"
+"${samtools}/samtools" view -1 "${samfile}" | "${samtools}/samtools" sort -l 9 -m 1G -o "${bamprefix}.bam" -T "${bamprefix}"
+"${samtools}/samtools" index "${bamprefix}.bam"
+
 if [[ ${keepsam} = 'no' ]]; then
 	rm -Rf "${samfile}"
 fi
